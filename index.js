@@ -14,44 +14,66 @@ var {
 
 var SCREEN_WIDTH = require('Dimensions').get('window').width;
 
+
 var Component = React.createClass({
+    findItemByValue: function (value) {   
+
+        var ret = null
+
+        this.props.items.forEach(s=> {
+            if(s[this.props.valueField] === value) {
+                ret = s;
+            }
+        });
+
+        return ret;
+    },
+
     show: function(){
         this.setState({modalVisible: true});
     },
+    
     getInitialState: function(){
-        
-        var selectedOption;
-        if (this.props.options.indexOf(this.props.selectedOption) > -1) {
-            selectedOption = this.props.selectedOption;
-        }
-        
         return {
-            options: this.props.options,
-            labels: this.props.labels || this.props.options,
+            items: this.props.items, // item : {value, label}
             color: this.props.color || '#007AFF',
             modalVisible: false,
-            selectedOption: selectedOption || this.props.options[0]
+            selectedItem: this.props.items[0]
         };
     },
+
+    ok: function(){
+        if(this.props.onSubmit){
+            this.props.onSubmit(this.state.selectedItem);
+        } 
+        this.setState({modalVisible: false});
+    },
+
+    cancel: function() {
+        this.setState({modalVisible: false});
+    },
+
+    pickerValueChanged: function (value) {
+        var selectedItem = this.findItemByValue(value)
+        this.setState({ selectedItem });
+    },
+    
     render: function() {
         return (
             <Modal
-                animated={true}
+                animated={false}
                 transparent={true}
                 visible={this.state.modalVisible}>
                 <View style={styles.basicContainer}>
                     <View style={styles.modalContainer}>
                         <View style={styles.buttonView}>
-                            <TouchableOpacity onPress={() => {
-                                    this.setState({modalVisible: false});
-                                }}>
-                                <Text style={{color:this.state.color}}>Cancel</Text>
+
+                            <TouchableOpacity onPress={this.cancel.bind(this)}>
+                                <Text style={{color:this.state.color}}>İptal</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => {
-                                    if(this.props.onSubmit) this.props.onSubmit(this.state.selectedOption);
-                                    this.setState({modalVisible: false});
-                                }}>
-                                <Text style={{color:this.state.color}}>Confirm</Text>
+
+                            <TouchableOpacity onPress={this.ok.bind(this)}>
+                                <Text style={{color:this.state.color}}>Tamam</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={styles.mainBox}>
@@ -59,16 +81,17 @@ var Component = React.createClass({
                             <PickerIOS
                                 ref={'picker'}
                                 style={styles.bottomPicker}
-                                selectedValue={this.state.selectedOption}
-                                onValueChange={(option) => this.setState({selectedOption: option})}
+                                selectedValue={this.state.selectedItem[this.props.valueField]}
+                                onValueChange={this.pickerValueChanged}
                                 >
-                                {this.state.options.map((option, i) => {
-                                    var label = this.state.labels[i] || option;
+                                {this.state.items.map((item, i) => {
+                                    var value = item[this.props.valueField];
+                                    var label = item[this.props.labelField];
+
                                     return (
                                         <PickerItemIOS
-                                            value={option}
-                                            label={label}
-                                            />
+                                            value={value}
+                                            label={label} />
                                     )
                                 })}
                             </PickerIOS>
